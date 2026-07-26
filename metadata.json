@@ -1,0 +1,6 @@
+{
+  "name": "Library of Alexander",
+  "description": "A personal book website and blog powered by Contentful CMS.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

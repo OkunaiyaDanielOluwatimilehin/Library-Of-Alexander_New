@@ -1,0 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Oswald", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-open-sans: "Open Sans", sans-serif;
+
+  --color-parchment-50: #fbf9f6;
+  --color-parchment-100: #f4eee2;
+  --color-parchment-200: #eadfc5;
+  --color-parchment-300: #dfcba1;
+  --color-parchment-400: #d4b47a;
+  --color-parchment-500: #cb9f5c;
+  --color-parchment-600: #c1884b;
+  --color-parchment-700: #a16b41;
+  --color-parchment-800: #845739;
+  --color-parchment-900: #6b4831;
+
+  --color-turf-green: #375f3a;
+  --color-dusk-blue: #1c2b3a;
+  --color-scarlet-rush: #c9302c;
+  --color-soft-blush: #f4d9d0;
+  --color-twilight-indigo: #2c2f4a;
+  
+  --color-primary-orange: #f59e0b;
+  --color-primary-teal: #2dd4bf;
+  --color-primary-yellow: #fde047;
+}
+
+@layer base {
+  body {
+    @apply font-sans bg-white text-gray-900;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display text-gray-900;
+  }
+}
