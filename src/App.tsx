@@ -1,6 +1,7 @@
 import { NotificationProvider } from './contexts/NotificationContext';
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { HelmetProvider, Helmet } from 'react-helmet-async';
 import { Search, Menu, X, ChevronUp } from 'lucide-react';
 
 import HomePage from './pages/HomePage';
@@ -199,92 +200,135 @@ function Navigation() {
   );
 }
 
+function DisclaimerBanner() {
+  const [dismissed, setDismissed] = useState(false);
+  const location = useLocation();
+
+  if (dismissed || location.pathname !== '/') return null;
+
+  const disclaimerText = "DISCLAIMER & NOTICE: Library of Alexander DOES NOT host, share, distribute, or pirate copyrighted books or digital files. We strictly DO NOT support book piracy in any form. All content is for reviews, summaries, and educational commentary.";
+
+  return (
+    <div className="bg-[#2d0d0d] text-[#fef3c7] py-2 overflow-hidden border-b border-[#7f1d1d] text-[10px] sm:text-[11px] font-mono font-bold tracking-widest uppercase select-none z-50 relative pr-10">
+      <div className="animate-marquee whitespace-nowrap flex items-center">
+        <span className="inline-block px-8 flex items-center gap-2">
+          <i className="fa-solid fa-triangle-exclamation text-rose-400"></i>
+          <span>{disclaimerText}</span>
+        </span>
+        <span className="inline-block px-8 flex items-center gap-2">
+          <i className="fa-solid fa-triangle-exclamation text-rose-400"></i>
+          <span>{disclaimerText}</span>
+        </span>
+      </div>
+      <button
+        onClick={() => setDismissed(true)}
+        className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#4c1d1d] hover:bg-[#6b2626] text-amber-200 p-1 rounded-full border border-rose-900/50 transition-colors z-10 flex items-center justify-center cursor-pointer"
+        title="Dismiss notice"
+        aria-label="Dismiss notice"
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+}
+
 export default function App() {
   return (
-    <BrowserRouter>
-      <NotificationProvider>
-      <div className="min-h-screen flex flex-col font-sans">
-        <header className="bg-parchment-50 border-b border-gray-200 relative">
-          <div className="max-w-[1920px] mx-auto px-4 md:px-6 py-4 sm:py-6 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2.5 z-10 group">
-              <i className="fa-solid fa-book-open-reader text-2xl text-[#C8885B] group-hover:scale-110 transition-transform"></i>
-              <span className="hidden sm:inline text-[16px] md:text-[18px] font-display font-bold uppercase tracking-widest text-black">
-                Library of Alexander
-              </span>
-            </Link>
-            <Navigation />
-          </div>
-        </header>
-
-        <main className="flex-1">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/collection" element={<LibraryCollectionPage />} />
-            <Route path="/books/:slug" element={<BookPage />} />
-            <Route path="/reviews/:slug" element={<ReviewPage />} />
-            <Route path="/authors" element={<AuthorPage />} />
-            <Route path="/authors/:name" element={<AuthorPage />} />
-            <Route path="/author/:name" element={<AuthorPage />} />
-            <Route path="/originals" element={<OriginalBooksPage />} />
-            <Route path="/originals/:slug/:chapterId?" element={<ReadOriginalBookPage />} />
-            <Route path="/category/:slug" element={<CategoryDetailPage />} />
-            <Route path="/genre/:slug" element={<GenrePage />} />
-            <Route path="/blog" element={<BlogPage />} />
-            <Route path="/blog/:slug" element={<BlogPostPage />} />
-            <Route path="/disclaimer" element={<DisclaimerPage />} />
-          </Routes>
-        </main>
-
-        <footer className="bg-[#1C1815] text-[#A6998C] py-8 sm:py-12 border-t border-[#2C2722] relative">
-          <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
-            <div className="flex flex-col sm:grid sm:grid-cols-4 gap-6 sm:gap-10 mb-8 sm:mb-12">
-              <div className="sm:col-span-2">
-                <div className="flex items-center gap-2.5 mb-2 sm:mb-3">
-                  <i className="fa-solid fa-book-open-reader text-xl sm:text-2xl text-[#C8885B]"></i>
-                  <h3 className="font-display font-bold uppercase tracking-widest text-sm sm:text-lg text-[#F5EFE6]">Library of Alexander</h3>
-                </div>
-                <p className="font-sans text-xs italic leading-snug sm:leading-relaxed max-w-md text-[#8C7F72]">
-                  "Reading is a sacred act of guided dreaming." — A modern digital library for timeless ideas, reviews, and original manuscripts.
-                </p>
+    <HelmetProvider>
+      <BrowserRouter>
+        <Helmet>
+          <title>Library of Alexander | Modern Digital Library</title>
+          <meta name="description" content="A modern digital library for timeless ideas, book reviews, summaries, and original manuscripts." />
+          <meta property="og:title" content="Library of Alexander" />
+          <meta property="og:description" content="A modern digital library for timeless ideas, book reviews, summaries, and original manuscripts." />
+          <meta property="og:type" content="website" />
+          <meta name="twitter:card" content="summary_large_image" />
+        </Helmet>
+        <NotificationProvider>
+          <div className="min-h-screen flex flex-col font-sans">
+            <DisclaimerBanner />
+            <header className="bg-parchment-50 border-b border-gray-200 relative">
+              <div className="max-w-[1920px] mx-auto px-4 md:px-6 py-4 sm:py-6 flex items-center justify-between">
+                <Link to="/" className="flex items-center gap-2.5 z-10 group">
+                  <i className="fa-solid fa-book-open-reader text-2xl text-[#C8885B] group-hover:scale-110 transition-transform"></i>
+                  <span className="hidden sm:inline text-[16px] md:text-[18px] font-display font-bold uppercase tracking-widest text-black">
+                    Library of Alexander
+                  </span>
+                </Link>
+                <Navigation />
               </div>
-              
-              <div className="grid grid-cols-2 gap-4 sm:contents">
-                <div>
-                  <h3 className="font-display font-bold uppercase tracking-widest text-[10px] sm:text-xs mb-2 sm:mb-3 text-[#C8885B]">Directory</h3>
-                  <ul className="space-y-1.5 text-xs font-sans">
-                    <li><Link to="/" className="text-[#B3A596] hover:text-[#F5EFE6] transition-colors">Home</Link></li>
-                    <li><Link to="/collection" className="text-[#B3A596] hover:text-[#F5EFE6] transition-colors">Collection</Link></li>
-                    <li><Link to="/authors" className="text-[#B3A596] hover:text-[#F5EFE6] transition-colors">Authors</Link></li>
-                    <li><Link to="/originals" className="text-[#B3A596] hover:text-[#F5EFE6] transition-colors">Originals</Link></li>
-                  </ul>
+            </header>
+
+            <main className="flex-1 max-w-[1920px] w-full mx-auto">
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/collection" element={<LibraryCollectionPage />} />
+                <Route path="/books/:slug" element={<BookPage />} />
+                <Route path="/reviews/:slug" element={<ReviewPage />} />
+                <Route path="/authors" element={<AuthorPage />} />
+                <Route path="/authors/:name" element={<AuthorPage />} />
+                <Route path="/author/:name" element={<AuthorPage />} />
+                <Route path="/originals" element={<OriginalBooksPage />} />
+                <Route path="/originals/:slug/:chapterId?" element={<ReadOriginalBookPage />} />
+                <Route path="/category/:slug" element={<CategoryDetailPage />} />
+                <Route path="/genre/:slug" element={<GenrePage />} />
+                <Route path="/blog" element={<BlogPage />} />
+                <Route path="/blog/:slug" element={<BlogPostPage />} />
+                <Route path="/disclaimer" element={<DisclaimerPage />} />
+              </Routes>
+            </main>
+
+            <footer className="bg-[#1C1815] text-[#A6998C] py-8 sm:py-12 border-t border-[#2C2722] relative">
+              <div className="max-w-[1920px] mx-auto px-4 sm:px-6">
+                <div className="flex flex-col sm:grid sm:grid-cols-4 gap-6 sm:gap-10 mb-8 sm:mb-12">
+                  <div className="sm:col-span-2">
+                    <div className="flex items-center gap-2.5 mb-2 sm:mb-3">
+                      <i className="fa-solid fa-book-open-reader text-xl sm:text-2xl text-[#C8885B]"></i>
+                      <h3 className="font-display font-bold uppercase tracking-widest text-sm sm:text-lg text-[#F5EFE6]">Library of Alexander</h3>
+                    </div>
+                    <p className="font-sans text-xs italic leading-snug sm:leading-relaxed max-w-md text-[#8C7F72]">
+                      "Reading is a sacred act of guided dreaming." — A modern digital library for timeless ideas, reviews, and original manuscripts.
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 sm:contents">
+                    <div>
+                      <h3 className="font-display font-bold uppercase tracking-widest text-[10px] sm:text-xs mb-2 sm:mb-3 text-[#C8885B]">Directory</h3>
+                      <ul className="space-y-1.5 text-xs font-sans">
+                        <li><Link to="/" className="text-[#B3A596] hover:text-[#F5EFE6] transition-colors">Home</Link></li>
+                        <li><Link to="/collection" className="text-[#B3A596] hover:text-[#F5EFE6] transition-colors">Collection</Link></li>
+                        <li><Link to="/authors" className="text-[#B3A596] hover:text-[#F5EFE6] transition-colors">Authors</Link></li>
+                        <li><Link to="/originals" className="text-[#B3A596] hover:text-[#F5EFE6] transition-colors">Originals</Link></li>
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <h3 className="font-display font-bold uppercase tracking-widest text-[10px] sm:text-xs mb-2 sm:mb-3 text-[#C8885B]">Quick Links</h3>
+                      <ul className="space-y-1.5 text-xs font-sans">
+                        <li><Link to="/#top-picks" className="text-[#B3A596] hover:text-[#F5EFE6] transition-colors">Top Picks</Link></li>
+                        <li><Link to="/blog" className="text-[#B3A596] hover:text-[#F5EFE6] transition-colors">Blog</Link></li>
+                        <li><Link to="/disclaimer" className="text-[#B3A596] hover:text-[#F5EFE6] transition-colors">Disclaimer</Link></li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
                 
-                <div>
-                  <h3 className="font-display font-bold uppercase tracking-widest text-[10px] sm:text-xs mb-2 sm:mb-3 text-[#C8885B]">Quick Links</h3>
-                  <ul className="space-y-1.5 text-xs font-sans">
-                    <li><Link to="/#top-picks" className="text-[#B3A596] hover:text-[#F5EFE6] transition-colors">Top Picks</Link></li>
-                    <li><Link to="/blog" className="text-[#B3A596] hover:text-[#F5EFE6] transition-colors">Blog</Link></li>
-                    <li><Link to="/disclaimer" className="text-[#B3A596] hover:text-[#F5EFE6] transition-colors">Disclaimer</Link></li>
-                  </ul>
+                <div className="border-t border-[#2C2722] pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[9px] sm:text-xs font-display uppercase tracking-widest text-[#7A6E63]">
+                  <div>© {new Date().getFullYear()} Library of Alexander. All rights reserved.</div>
+                  <button 
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
+                    className="inline-flex items-center gap-1.5 text-[#C8885B] hover:text-[#F5EFE6] transition-colors cursor-pointer"
+                  >
+                    <span>Back to top</span>
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
-            </div>
-            
-            <div className="border-t border-[#2C2722] pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[9px] sm:text-xs font-display uppercase tracking-widest text-[#7A6E63]">
-              <div>© {new Date().getFullYear()} Library of Alexander. All rights reserved.</div>
-              <button 
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
-                className="inline-flex items-center gap-1.5 text-[#C8885B] hover:text-[#F5EFE6] transition-colors cursor-pointer"
-              >
-                <span>Back to top</span>
-                <ChevronUp className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            </footer>
+            <ScrollToTopButton />
           </div>
-        </footer>
-        <ScrollToTopButton />
-      </div>
-          </NotificationProvider>
-    </BrowserRouter>
+        </NotificationProvider>
+      </BrowserRouter>
+    </HelmetProvider>
   );
 }

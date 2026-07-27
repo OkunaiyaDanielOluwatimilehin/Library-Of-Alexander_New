@@ -169,9 +169,9 @@ function CategoryRow({ category }: { category: CategoryRowData; key?: React.Key 
   
   if (!category.books || category.books.length === 0) return null;
   
-  const targetUrl = category.id.startsWith('author-')
-    ? `/author/${category.title.replace('Books by ', '').toLowerCase().trim().replace(/\s+/g, '-')}`
-    : `/category/${category.slug || category.title.toLowerCase().trim().replace(/\s+/g, '-')}`;
+  const targetUrl = category.slug
+    ? `/category/${category.slug}`
+    : `/category/${category.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-')}`;
 
   return (
     <div className="border-t border-gray-200 py-6 sm:py-12">
@@ -263,6 +263,7 @@ export default function LibraryCollectionPage() {
       cats = authorOptions.map(a => ({
         id: `author-${a}`,
         title: a,
+        slug: `author-${a.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-')}`,
         subtitle: 'AUTHOR SPOTLIGHT',
         description: `A curated collection of captivating books, stories, and literary works in Books by ${a}.`,
         books: allBooks.filter(b => b.fields.author && b.fields.author.trim() === a)
@@ -273,6 +274,7 @@ export default function LibraryCollectionPage() {
       cats = genreOptions.map(g => ({
         id: `genre-${g}`,
         title: g,
+        slug: g.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-'),
         subtitle: 'GENRE / CATEGORY',
         description: getCategoryDescription(g),
         books: allBooks.filter(b => {
@@ -340,32 +342,15 @@ export default function LibraryCollectionPage() {
       // Build categories list
       const cats: CategoryRowData[] = [];
 
-      // Authors with notable works
-      const authorCats: CategoryRowData[] = [];
-      authorsData.forEach(author => {
-        if (author.fields.notableWorks && Array.isArray(author.fields.notableWorks) && author.fields.notableWorks.length > 0) {
-          // Verify they are actual books
-          const books = author.fields.notableWorks.filter(w => w?.sys?.contentType?.sys?.id === 'book' || w?.fields?.title) as Book[];
-          if (books.length > 0) {
-            authorCats.push({
-              id: `author-${author.sys.id}`,
-              title: `Books by ${author.fields.name}`,
-              subtitle: 'AUTHOR SPOTLIGHT',
-              description: `A curated collection of captivating books, stories, and literary works in Books by ${author.fields.name}.`,
-              books: books
-            });
-          }
-        }
-      });
-
       // Contentful Categories
       const contentfulCats: CategoryRowData[] = [];
       categoriesData.forEach(c => {
         if (c.fields.books && c.fields.books.length > 0) {
+          const cleanSlug = c.fields.slug || c.fields.title?.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
           contentfulCats.push({
-            id: `category-${c.sys.id}`,
+            id: c.sys.id,
             title: c.fields.title,
-            slug: c.fields.slug || c.fields.title.toLowerCase().trim().replace(/\s+/g, '-'),
+            slug: cleanSlug,
             subtitle: 'GENRE / CATEGORY',
             description: getCategoryDescription(c.fields.title, c.fields.description),
             books: c.fields.books as Book[]
@@ -373,13 +358,13 @@ export default function LibraryCollectionPage() {
         }
       });
 
-      // Sort authorCats and contentfulCats alphabetically
-      const combinedAlpha = [...authorCats, ...contentfulCats].sort((a, b) => a.title.localeCompare(b.title));
+      // Sort contentfulCats alphabetically
+      contentfulCats.sort((a, b) => a.title.localeCompare(b.title));
 
       // Append to cats
-      cats.push(...combinedAlpha);
+      cats.push(...contentfulCats);
       
-      // Deduplicate by title just in case (e.g. if Contentful Category has same name as Author Category)
+      // Deduplicate by title just in case
       const uniqueCats = Array.from(new Map(cats.map(c => [c.title, c])).values());
 
       setCategories(uniqueCats);

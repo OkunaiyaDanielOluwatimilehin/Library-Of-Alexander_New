@@ -22,6 +22,10 @@ export default function AuthorPage() {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [name]);
+
+  useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -310,11 +314,6 @@ export default function AuthorPage() {
           BACK TO AUTHORS LIST
         </Link>
 
-        {/* Author Name Title at top left above image */}
-        <h1 className="font-display text-3xl sm:text-5xl md:text-6xl lg:text-7xl text-[#1A1A1A] uppercase font-black tracking-tight leading-tight mb-6 sm:mb-8 text-left">
-          {author.fields.name}
-        </h1>
-
         {/* Top Section: Image & Bio */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-12 lg:gap-20 mb-12 sm:mb-20">
           {/* Left Column - Image, Share & Links */}
@@ -395,6 +394,10 @@ export default function AuthorPage() {
 
           {/* Right Column - Bio & Facts */}
           <div className="md:col-span-8 lg:col-span-9">
+            <h1 className="font-display text-3xl sm:text-5xl md:text-6xl text-[#1A1A1A] uppercase font-black tracking-tight leading-tight mb-4 sm:mb-6 text-left">
+              {author.fields.name}
+            </h1>
+
             {author.fields.bio && (
               <div className="prose prose-neutral sm:prose-lg max-w-none text-[#2B2B2B] font-[Open_Sans] text-sm sm:text-base leading-relaxed sm:leading-loose mb-8 sm:mb-12 space-y-4 [&>p]:mb-4 [&>p]:leading-relaxed text-left">
                 <Markdown>{String(author.fields.bio)}</Markdown>
@@ -413,7 +416,6 @@ export default function AuthorPage() {
                     <ul className="space-y-3 sm:space-y-4 font-sans text-xs sm:text-sm text-[#4A4A4A]">
                       {(Array.isArray(author.fields.funFacts) ? author.fields.funFacts : [author.fields.funFacts]).map((fact: any, i: number) => (
                         <li key={i} className="flex gap-3 sm:gap-4 items-start">
-                          <span className="bg-[#F5F1EB] border border-[#E8E3DC] text-[#C8885B] font-bold text-xs w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-none shrink-0 mt-0.5">{i + 1}</span>
                           <span className="leading-relaxed">{fact}</span>
                         </li>
                       ))}

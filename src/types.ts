@@ -32,6 +32,10 @@ export interface Book {
     bookNumber?: number;
     seriesNumber?: number;
     authorName?: string;
+    weeksOnList?: number | string;
+    weeks?: number | string;
+    chartMovement?: string;
+    movement?: string;
   };
 }
 

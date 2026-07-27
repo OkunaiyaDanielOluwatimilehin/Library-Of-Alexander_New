@@ -40,39 +40,49 @@ app.get("/api/ratings/:bookId", async (req, res) => {
   }
   
   try {
-    const { data, error } = await supabase
-      .from('comments').select('comment').eq('name', 'RATING')
-      .eq('content_key', req.params.bookId);
-      
-    
-    if (error) {
-      
-      return res.json({ average: 0, count: 0, breakdown: { 1:0, 2:0, 3:0, 4:0, 5:0 } });
-    }
-    
-    if (!data || data.length === 0) {
-      return res.json({ average: 0, count: 0, breakdown: { 1:0, 2:0, 3:0, 4:0, 5:0 } });
-    }
-    
     let count = 0;
     let sum = 0;
-    const breakdown = { 1:0, 2:0, 3:0, 4:0, 5:0 };
-    
-    data.forEach(r => {
-      const val = parseInt(r.comment);
-      if (!isNaN(val) && val >= 1 && val <= 5) {
-        count++;
-        sum += val;
-        breakdown[val]++;
+    const breakdown: Record<number, number> = { 1:0, 2:0, 3:0, 4:0, 5:0 };
+
+    // Try 'ratings' table first
+    const { data: ratingsData, error: rErr } = await supabase
+      .from('ratings')
+      .select('rating')
+      .eq('book_id', req.params.bookId);
+      
+    if (!rErr && ratingsData && ratingsData.length > 0) {
+      ratingsData.forEach((r: any) => {
+        const val = Number(r.rating);
+        if (val >= 1 && val <= 5) {
+          count++;
+          sum += val;
+          breakdown[val] = (breakdown[val] || 0) + 1;
+        }
+      });
+    } else {
+      // Fallback to 'comments' table
+      const { data: commentsData } = await supabase
+        .from('comments')
+        .select('comment')
+        .eq('name', 'RATING')
+        .eq('content_key', req.params.bookId);
+
+      if (commentsData) {
+        commentsData.forEach((r: any) => {
+          const val = parseInt(r.comment);
+          if (!isNaN(val) && val >= 1 && val <= 5) {
+            count++;
+            sum += val;
+            breakdown[val] = (breakdown[val] || 0) + 1;
+          }
+        });
       }
-    });
+    }
     
     const average = count > 0 ? sum / count : 0;
-    
     res.json({ average, count, breakdown });
   } catch (error) {
-    
-    res.status(500).json({ error: "Failed to fetch ratings" });
+    res.json({ average: 0, count: 0, breakdown: { 1:0, 2:0, 3:0, 4:0, 5:0 } });
   }
 });
 
@@ -87,14 +97,19 @@ app.post("/api/ratings/:bookId", async (req, res) => {
   }
   
   try {
-    const { error } = await supabase
-      .from('comments').insert([{ content_key: req.params.bookId, name: 'RATING', comment: String(rating) }]);
+    const { error: rErr } = await supabase
+      .from('ratings')
+      .insert([{ book_id: req.params.bookId, rating: Number(rating) }]);
       
-    if (error) throw error;
+    if (rErr) {
+      const { error: cErr } = await supabase
+        .from('comments')
+        .insert([{ content_key: req.params.bookId, name: 'RATING', comment: String(rating) }]);
+      if (cErr) throw cErr;
+    }
     
     res.json({ success: true });
-  } catch (error) {
-    
+  } catch (error: any) {
     res.status(500).json({ error: "Failed to submit rating", details: error.message });
   }
 });
@@ -106,21 +121,37 @@ app.get("/api/reviews/:bookId", async (req, res) => {
   }
   
   try {
-    const { data, error } = await supabase
+    const { data: reviewsData, error: rErr } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('book_id', req.params.bookId)
+      .order('created_at', { ascending: false });
+      
+    if (!rErr && reviewsData && reviewsData.length > 0) {
+      return res.json(reviewsData);
+    }
+
+    const { data: commentsData } = await supabase
       .from('comments')
       .select('*')
       .eq('content_key', req.params.bookId)
       .neq('name', 'RATING')
       .order('created_at', { ascending: false });
       
-    if (error) {
-      
-      return res.json([]);
+    if (commentsData) {
+      const mapped = commentsData.map((c: any) => ({
+        id: c.id,
+        book_id: c.content_key,
+        author_name: c.name,
+        content: c.comment,
+        created_at: c.created_at
+      }));
+      return res.json(mapped);
     }
-    res.json(data || []);
+
+    res.json([]);
   } catch (error) {
-    
-    res.status(500).json({ error: "Failed to fetch reviews" });
+    res.json([]);
   }
 });
 
@@ -135,17 +166,31 @@ app.post("/api/reviews/:bookId", async (req, res) => {
   }
   
   try {
-    const { data, error } = await supabase
-      .from('comments')
-      .insert([
-        { content_key: req.params.bookId, name: author_name, comment: content }
-      ])
+    const { data: rData, error: rErr } = await supabase
+      .from('reviews')
+      .insert([{ book_id: req.params.bookId, author_name, content }])
       .select();
       
-    if (error) throw error;
-    res.json(data[0]);
-  } catch (error) {
-    
+    if (!rErr && rData && rData.length > 0) {
+      return res.json(rData[0]);
+    }
+
+    const { data: cData, error: cErr } = await supabase
+      .from('comments')
+      .insert([{ content_key: req.params.bookId, name: author_name, comment: content }])
+      .select();
+
+    if (cErr) throw cErr;
+
+    const mapped = {
+      id: cData[0].id,
+      book_id: cData[0].content_key,
+      author_name: cData[0].name,
+      content: cData[0].comment,
+      created_at: cData[0].created_at
+    };
+    res.json(mapped);
+  } catch (error: any) {
     res.status(500).json({ error: "Failed to submit review", details: error.message });
   }
 });
@@ -157,28 +202,38 @@ app.get("/api/progress/:bookId", async (req, res) => {
   }
   
   try {
-    const { data, error } = await supabase
+    const counts = { want_to_read: 0, reading: 0, completed: 0 };
+
+    const { data: pData, error: pErr } = await supabase
+      .from('shelf_progress')
+      .select('status')
+      .eq('book_id', req.params.bookId);
+
+    if (!pErr && pData && pData.length > 0) {
+      pData.forEach((r: any) => {
+        if (r.status === 'want_to_read') counts.want_to_read++;
+        if (r.status === 'reading') counts.reading++;
+        if (r.status === 'completed') counts.completed++;
+      });
+      return res.json(counts);
+    }
+
+    const { data: rData } = await supabase
       .from('reactions')
       .select('reaction_type')
-      .eq('content_key', req.params.bookId)
-      .in('reaction_type', ['like', 'love', 'fire']);
-      
-    if (error) {
-      return res.json({ want_to_read: 0, reading: 0, completed: 0 });
-    }
-    
-    const counts = { want_to_read: 0, reading: 0, completed: 0 };
-    if (data) {
-      data.forEach(r => {
-        if (r.reaction_type === 'like') counts.want_to_read++;
-        if (r.reaction_type === 'love') counts.reading++;
-        if (r.reaction_type === 'fire') counts.completed++;
+      .eq('content_key', req.params.bookId);
+
+    if (rData) {
+      rData.forEach((r: any) => {
+        if (r.reaction_type === 'like' || r.reaction_type === 'want_to_read') counts.want_to_read++;
+        if (r.reaction_type === 'love' || r.reaction_type === 'reading') counts.reading++;
+        if (r.reaction_type === 'fire' || r.reaction_type === 'completed') counts.completed++;
       });
     }
-    
+
     res.json(counts);
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch progress" });
+    res.json({ want_to_read: 0, reading: 0, completed: 0 });
   }
 });
 
@@ -192,25 +247,21 @@ app.post("/api/progress/:bookId", async (req, res) => {
     return res.status(400).json({ error: "Invalid status" });
   }
   
-  const mappedStatus = status === 'want_to_read' ? 'like' : status === 'reading' ? 'love' : 'fire';
-  
   try {
-    // Delete existing reaction from this IP/fingerprint to simulate "upsert" or distinct progress state
-    await supabase
-      .from('reactions')
-      .delete()
-      .eq('content_key', req.params.bookId)
-      .eq('fingerprint', req.ip || 'anonymous');
-      
-    const { error } = await supabase
-      .from('reactions')
-      .insert([
-        { content_key: req.params.bookId, reaction_type: mappedStatus, fingerprint: req.ip || 'anonymous' }
-      ]);
-      
-    if (error) throw error;
+    const { error: pErr } = await supabase
+      .from('shelf_progress')
+      .insert([{ book_id: req.params.bookId, status }]);
+
+    if (pErr) {
+      const mappedStatus = status === 'want_to_read' ? 'like' : status === 'reading' ? 'love' : 'fire';
+      const { error: rErr } = await supabase
+        .from('reactions')
+        .insert([{ content_key: req.params.bookId, reaction_type: mappedStatus, fingerprint: req.ip || 'anonymous' }]);
+      if (rErr) throw rErr;
+    }
+
     res.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ error: "Failed to update progress", details: error.message });
   }
 });

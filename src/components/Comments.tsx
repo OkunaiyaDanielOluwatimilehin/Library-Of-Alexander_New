@@ -1,6 +1,6 @@
 import { useNotification } from '../contexts/NotificationContext';
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { getReviews, submitReview } from '../lib/supabase';
 
 interface Comment {
   id: string;
@@ -18,9 +18,14 @@ export function Comments({ content_key }: { content_key: string }) {
 
   const fetchComments = async () => {
     try {
-      const res = await fetch(`/api/reviews/${content_key}`);
-      const data = await res.json();
-      setComments(data || []);
+      const data = await getReviews(content_key);
+      const mapped = (data || []).map((item: any) => ({
+        id: item.id || String(Math.random()),
+        name: item.author_name || item.name || 'Anonymous',
+        comment: item.content || item.comment || '',
+        created_at: item.created_at || new Date().toISOString()
+      }));
+      setComments(mapped);
     } catch (err) {
       console.error(err);
     } finally {
@@ -39,18 +44,18 @@ export function Comments({ content_key }: { content_key: string }) {
     if (!commentText.trim()) return;
     
     try {
-      const res = await fetch(`/api/reviews/${content_key}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          author_name: name.trim() || 'Anonymous',
-          content: commentText.trim()
-        })
-      });
-      const data = await res.json();
-      if (data && !data.error) {
+      const author = name.trim() || 'Anonymous';
+      const text = commentText.trim();
+      const res = await submitReview(content_key, author, text);
+      if (res) {
         showNotification('Comment posted successfully', 'success');
-        setComments([data, ...comments]);
+        const newC: Comment = {
+          id: res.id || String(Date.now()),
+          name: res.author_name || res.name || author,
+          comment: res.content || res.comment || text,
+          created_at: res.created_at || new Date().toISOString()
+        };
+        setComments([newC, ...comments]);
         setName('');
         setCommentText('');
       }

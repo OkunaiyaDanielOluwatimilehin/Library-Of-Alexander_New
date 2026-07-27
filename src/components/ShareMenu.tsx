@@ -93,23 +93,29 @@ export function ShareMenu({ title, url, description, imageUrl, author, className
                 </button>
               </div>
 
-              <div className="p-4 sm:p-6 md:p-8">
+              <div className="p-4 sm:p-6">
                 {/* Social Media Preview Card */}
-                <div className="w-full bg-white border border-[#E8E3DC] rounded-md overflow-hidden mb-6 sm:mb-8 shadow-xs">
+                <div className="w-full bg-white border border-[#E8E3DC] rounded-lg overflow-hidden mb-6 shadow-sm">
                   {imageUrl ? (
-                    <div className="w-full h-36 sm:h-48 bg-gray-100 border-b border-[#E8E3DC]">
+                    <div className="w-full h-40 sm:h-52 bg-gray-100 border-b border-[#E8E3DC] relative">
                       <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
+                      <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-xs text-white text-[9px] font-mono px-2 py-0.5 rounded uppercase">
+                        Link Preview
+                      </div>
                     </div>
                   ) : (
-                    <div className="w-full h-28 sm:h-32 bg-[#1A1A1A] flex items-center justify-center border-b border-[#E8E3DC]">
-                      <span className="font-display font-black text-lg sm:text-2xl text-white uppercase tracking-widest opacity-80">Library of Alexander</span>
+                    <div className="w-full h-32 sm:h-36 bg-[#1A1A1A] flex items-center justify-center border-b border-[#E8E3DC] p-4 text-center">
+                      <span className="font-display font-black text-base sm:text-xl text-white uppercase tracking-widest opacity-90">Library of Alexander</span>
                     </div>
                   )}
-                  <div className="p-3 sm:p-4 bg-[#FAFAFA]">
-                    <div className="text-[9px] sm:text-[10px] text-gray-500 uppercase tracking-widest font-mono mb-0.5 sm:mb-1">{new URL(window.location.href).hostname}</div>
-                    <h4 className="font-display font-bold text-[#1A1A1A] text-sm sm:text-lg leading-tight mb-1 line-clamp-2">{title}</h4>
+                  <div className="p-3.5 sm:p-5 bg-[#FAFAFA]">
+                    <div className="text-[10px] text-[#C8885B] uppercase tracking-widest font-mono font-bold mb-1 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#C8885B]"></span>
+                      {new URL(window.location.href).hostname}
+                    </div>
+                    <h4 className="font-display font-bold text-[#1A1A1A] text-sm sm:text-base leading-snug mb-1.5 line-clamp-2">{title}</h4>
                     {(description || author) && (
-                      <p className="font-sans text-xs sm:text-[13px] text-gray-600 line-clamp-2">
+                      <p className="font-sans text-xs sm:text-sm text-gray-600 line-clamp-2 leading-relaxed">
                         {description ? description : `By ${author}`}
                       </p>
                     )}

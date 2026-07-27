@@ -119,7 +119,7 @@ function BookCard({ book, currentSlug }: { book: Book; currentSlug?: string; key
   const bookTarget = `${getBookUrl(book)}?from=${fromCategory}`;
 
   return (
-    <Link to={bookTarget} className="group relative w-full max-w-[130px] sm:max-w-[210px] mx-auto aspect-[2/3] overflow-hidden rounded shadow-sm hover:shadow-xl transition-all duration-300 block bg-[#1A1A1A]">
+    <Link to={bookTarget} className="group relative w-full max-w-full sm:max-w-[210px] mx-auto aspect-[2/3] overflow-hidden rounded shadow-sm hover:shadow-xl transition-all duration-300 block bg-[#1A1A1A]">
       {badgeUI}
       {coverUrl ? (
         <img src={coverUrl} alt={book.fields.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -198,6 +198,7 @@ export default function CategoryDetailPage() {
   }, [slug, books]);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     async function loadData() {
       setLoading(true);
       try {
@@ -271,28 +272,83 @@ export default function CategoryDetailPage() {
           }
           setBooks(bsBooks.sort(sortByRank));
         } else if (slug?.startsWith('author-')) {
-          const authorId = slug.replace('author-', '');
-          const authors = await fetchEntries<Author>('author', { 'sys.id': authorId, include: 2 });
+          const authorIdentifier = slug.replace('author-', '');
+          const authors = await fetchEntries<Author>('author', { 'sys.id': authorIdentifier, include: 2 });
           if (authors.length > 0) {
             setTitle(`BOOKS BY ${authors[0].fields.name.toUpperCase()}`);
             if (authors[0].fields.notableWorks && Array.isArray(authors[0].fields.notableWorks)) {
               setBooks(authors[0].fields.notableWorks.filter((w: any) => w?.sys?.contentType?.sys?.id === 'book' || w?.fields?.title) as Book[]);
+            } else {
+              setBooks(booksData.filter(b => b.fields.author && b.fields.author.toLowerCase().trim() === authors[0].fields.name.toLowerCase().trim()));
+            }
+          } else {
+            const cleanAuthorName = decodeURIComponent(authorIdentifier).replace(/-/g, ' ').toLowerCase().trim();
+            const allAuthors = await fetchEntries<Author>('author', { limit: 100 });
+            const foundAuthor = allAuthors.find(a => a.fields.name.toLowerCase().trim() === cleanAuthorName);
+            if (foundAuthor) {
+              setTitle(`BOOKS BY ${foundAuthor.fields.name.toUpperCase()}`);
+              if (foundAuthor.fields.notableWorks && Array.isArray(foundAuthor.fields.notableWorks)) {
+                setBooks(foundAuthor.fields.notableWorks.filter((w: any) => w?.sys?.contentType?.sys?.id === 'book' || w?.fields?.title) as Book[]);
+              } else {
+                setBooks(booksData.filter(b => b.fields.author && b.fields.author.toLowerCase().trim() === foundAuthor.fields.name.toLowerCase().trim()));
+              }
+            } else {
+              setTitle(`BOOKS BY ${cleanAuthorName.toUpperCase()}`);
+              setBooks(booksData.filter(b => b.fields.author && b.fields.author.toLowerCase().trim() === cleanAuthorName));
             }
           }
         } else if (slug?.startsWith('category-')) {
           const categoryId = slug.replace('category-', '');
-          const categories = await fetchEntries<Category>('category', { 'sys.id': categoryId, include: 2 });
-          if (categories.length > 0) {
-            setTitle(categories[0].fields.title.toUpperCase());
-            if (categories[0].fields.description) {
-              setSubText(categories[0].fields.description);
+          const categoriesData = await fetchEntries<Category>('category', { limit: 100 });
+          const matchedCat = categoriesData.find(c => c.sys.id === categoryId || c.fields.slug === categoryId || c.fields.slug === slug);
+          if (matchedCat) {
+            setTitle(matchedCat.fields.title.toUpperCase());
+            if (matchedCat.fields.description) setSubText(matchedCat.fields.description);
+            if (matchedCat.fields.books && matchedCat.fields.books.length > 0) {
+              setBooks(matchedCat.fields.books as Book[]);
+            } else {
+              const cleanTitle = matchedCat.fields.title.toLowerCase();
+              setBooks(booksData.filter(b => (b.fields.genre || b.fields.category || '').toLowerCase().includes(cleanTitle)));
             }
-            if (categories[0].fields.books) {
-              setBooks(categories[0].fields.books as Book[]);
+          } else {
+            const categories = await fetchEntries<Category>('category', { 'sys.id': categoryId, include: 2 });
+            if (categories.length > 0) {
+              setTitle(categories[0].fields.title.toUpperCase());
+              if (categories[0].fields.description) setSubText(categories[0].fields.description);
+              if (categories[0].fields.books) setBooks(categories[0].fields.books as Book[]);
             }
           }
         } else {
-          setTitle(slug ? slug.replace(/-/g, ' ').toUpperCase() : 'CATEGORY');
+          const cleanSlug = slug ? decodeURIComponent(slug).toLowerCase().replace(/-/g, ' ').trim() : '';
+          const categoriesData = await fetchEntries<Category>('category', { limit: 100 });
+          const matchedCat = categoriesData.find(c => {
+            const catSlug = (c.fields.slug || c.fields.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-')).trim();
+            const catTitle = c.fields.title?.toLowerCase().trim();
+            return catSlug === slug || catTitle === cleanSlug || c.sys.id === slug;
+          });
+
+          if (matchedCat) {
+            setTitle(matchedCat.fields.title.toUpperCase());
+            if (matchedCat.fields.description) {
+              setSubText(matchedCat.fields.description);
+            }
+            if (matchedCat.fields.books && matchedCat.fields.books.length > 0) {
+              setBooks(matchedCat.fields.books as Book[]);
+            } else {
+              const filtered = booksData.filter(b => {
+                const bg = (b.fields.genre || b.fields.category || '').toLowerCase();
+                return bg.includes(cleanSlug) || bg.includes(matchedCat.fields.title.toLowerCase());
+              });
+              setBooks(filtered);
+            }
+          } else {
+            setTitle(slug ? decodeURIComponent(slug).replace(/-/g, ' ').toUpperCase() : 'CATEGORY');
+            const filtered = booksData.filter(b => {
+              const bg = (b.fields.genre || b.fields.category || '').toLowerCase();
+              return bg.includes(cleanSlug);
+            });
+            setBooks(filtered);
+          }
         }
       } catch (e) {
         console.error(e);
@@ -366,7 +422,8 @@ export default function CategoryDetailPage() {
                 {paginatedBooks.map((book, index) => {
                   const coverUrl = getImageUrl(book.fields.coverImage || book.fields.imageUrl) || book.fields.imageUrl;
                   const rank = book.fields.rank || book.fields.topPickOrder || ((currentPage - 1) * itemsPerPage + index + 1);
-                  const stats = getLeaderboardStats(rank, book);
+                  const weeks = book.fields.weeksOnList ?? book.fields.weeks;
+                  const movement = book.fields.chartMovement ?? book.fields.movement;
                   
                   let medalColor = 'text-[#FFD700]';
                   let borderColor = 'border-[#FFD700] text-[#FFD700]';
@@ -412,17 +469,17 @@ export default function CategoryDetailPage() {
                         </span>
                       </div>
                       <div className="col-span-3 flex items-center justify-end gap-3">
-                        <div className="text-right">
-                          <div className="font-mono text-xs font-bold text-gray-900">{stats.weeks} WEEKS</div>
-                          <div className="text-[10px] text-gray-500 font-sans uppercase">ON LEADERBOARD</div>
-                        </div>
-                        <div className={`px-2.5 py-1 rounded border text-[10px] font-black font-mono tracking-wider flex items-center gap-1 ${stats.color}`}>
-                          {stats.type === 'up' && <ArrowUp className="w-3 h-3 stroke-[3]" />}
-                          {stats.type === 'down' && <ArrowDown className="w-3 h-3 stroke-[3]" />}
-                          {stats.type === 'same' && <Minus className="w-3 h-3 stroke-[3]" />}
-                          {stats.type === 'debut' && <Sparkles className="w-3 h-3" />}
-                          {stats.label}
-                        </div>
+                        {weeks !== undefined && weeks !== null && weeks !== '' ? (
+                          <div className="text-right">
+                            <div className="font-mono text-xs font-bold text-gray-900">{weeks} WEEKS</div>
+                            <div className="text-[10px] text-gray-500 font-sans uppercase">ON LEADERBOARD</div>
+                          </div>
+                        ) : null}
+                        {movement ? (
+                          <div className="px-2.5 py-1 rounded border text-[10px] font-black font-mono tracking-wider flex items-center gap-1 bg-gray-100 text-gray-800 border-gray-300">
+                            {String(movement).toUpperCase()}
+                          </div>
+                        ) : null}
                       </div>
                     </Link>
                   );
@@ -430,18 +487,12 @@ export default function CategoryDetailPage() {
               </div>
             </div>
 
-            {/* MOBILE TABLE VIEW (under md) */}
+            {/* MOBILE TABLE/LIST VIEW FOR TOP PICKS (under md) */}
             <div className="block md:hidden bg-white border border-gray-200 shadow-xs rounded overflow-hidden">
-              <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200 bg-gray-50/80">
-                <span className="text-gray-500 font-display font-bold text-[9px] uppercase tracking-widest">Book Cover & Rank</span>
-                <span className="text-gray-500 font-display font-bold text-[9px] uppercase tracking-widest">Title, Author & Movement</span>
-              </div>
-
-              <div className="flex flex-col">
+              <div className="flex flex-col border-b border-gray-100">
                 {mobileTopPicksBooks.map((book, index) => {
                   const coverUrl = getImageUrl(book.fields.coverImage || book.fields.imageUrl) || book.fields.imageUrl;
                   const rank = book.fields.rank || book.fields.topPickOrder || (index + 1);
-                  const stats = getLeaderboardStats(rank, book);
 
                   let medalColor = 'text-[#FFD700]';
                   let borderColor = 'border-[#FFD700] text-[#FFD700]';
@@ -460,47 +511,39 @@ export default function CategoryDetailPage() {
                       to={`${getBookUrl(book)}?from=top-picks`}
                       key={book.sys.id}
                       ref={isRank11 ? rank11Ref : null}
-                      className="flex items-center gap-3 p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors group"
+                      className="group flex items-center gap-3.5 p-3 sm:p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors bg-white"
                     >
-                      {/* Cover with Rank Overlay Badge */}
-                      <div className="relative w-[55px] h-[82px] flex-shrink-0 shadow-sm rounded overflow-hidden bg-gray-900">
+                      {/* Rank Badge */}
+                      <div className={`px-2 py-1 rounded text-[10px] font-extrabold flex items-center gap-1 border ${borderColor} bg-[#121212] shrink-0`}>
+                        <i className={`fa-solid fa-medal ${medalColor} text-[10px]`}></i> #{rank}
+                      </div>
+
+                      {/* Cover Thumbnail */}
+                      <div className="w-[52px] h-[78px] shrink-0 shadow-sm rounded overflow-hidden">
                         {coverUrl ? (
-                          <img src={coverUrl} alt={book.fields.title} className="w-full h-full object-cover" />
+                          <img src={coverUrl} alt={book.fields.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         ) : (
                           <div className="w-full h-full bg-dusk-blue flex items-center justify-center p-1 text-center">
                             <span className="font-display font-bold text-white text-[7px]">{book.fields.title}</span>
                           </div>
                         )}
-                        <div className={`absolute top-1 left-1 px-1 py-0.5 rounded text-[8px] font-black flex items-center gap-0.5 border ${borderColor} bg-[#121212]/90 backdrop-blur-xs`}>
-                          <i className={`fa-solid fa-medal ${medalColor} text-[8px]`}></i> #{rank}
-                        </div>
                       </div>
 
-                      {/* Details & Movement */}
-                      <div className="min-w-0 flex-1 flex flex-col gap-1">
-                        <h3 className="font-display font-bold text-xs text-black group-hover:text-primary-orange transition-colors uppercase leading-tight line-clamp-2">
+                      {/* Details */}
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-display font-bold text-xs text-black group-hover:text-primary-orange transition-colors uppercase leading-snug line-clamp-2">
                           {book.fields.title}
                           {book.fields.series && ` - ${book.fields.series}`}
+                          {(book.fields.seriesNumber || book.fields.bookNumber) && ` #${book.fields.seriesNumber || book.fields.bookNumber}`}
                         </h3>
                         {book.fields.author && (
-                          <p className="font-sans italic text-gray-500 text-[11px] truncate">
+                          <p className="font-sans italic text-gray-600 text-[11px] mt-0.5 truncate">
                             BY {book.fields.author}
                           </p>
                         )}
-
-                        <div className="flex items-center justify-between gap-2 mt-0.5">
-                          <span className="font-mono text-[9px] text-gray-500 font-medium">
-                            {stats.weeks} WEEKS ON LIST
-                          </span>
-
-                          <div className={`px-1.5 py-0.5 rounded border text-[8px] font-black font-mono tracking-wider flex items-center gap-0.5 ${stats.color}`}>
-                            {stats.type === 'up' && <ArrowUp className="w-2.5 h-2.5 stroke-[3]" />}
-                            {stats.type === 'down' && <ArrowDown className="w-2.5 h-2.5 stroke-[3]" />}
-                            {stats.type === 'same' && <Minus className="w-2.5 h-2.5 stroke-[3]" />}
-                            {stats.type === 'debut' && <Sparkles className="w-2.5 h-2.5" />}
-                            {stats.label}
-                          </div>
-                        </div>
+                        <p className="font-sans text-gray-400 text-[9px] uppercase tracking-wider mt-0.5">
+                          {book.fields.genre ? String(book.fields.genre).split(',')[0].trim() : (book.fields.category ? String(book.fields.category).split(',')[0].trim() : 'Uncategorized')}
+                        </p>
                       </div>
                     </Link>
                   );
@@ -509,10 +552,10 @@ export default function CategoryDetailPage() {
 
               {/* Mobile View More Button for Top Picks (Ranks 11-20) */}
               {!topPicksExpanded && books.length > 10 && (
-                <div className="p-4 bg-gray-50 border-t border-gray-200 text-center">
+                <div className="p-3 bg-gray-50 text-center border-t border-gray-100">
                   <button
                     onClick={handleExpandTopPicks}
-                    className="w-full py-3 bg-[#1A1A1A] text-white font-display font-bold text-xs uppercase tracking-widest rounded shadow-md hover:bg-black transition-all flex items-center justify-center gap-2"
+                    className="w-full py-2.5 bg-[#1A1A1A] text-white font-display font-bold text-xs uppercase tracking-widest rounded shadow-sm hover:bg-black transition-all flex items-center justify-center gap-2"
                   >
                     VIEW MORE (RANKS 11-20)
                     <ChevronDown className="w-4 h-4 animate-bounce" />

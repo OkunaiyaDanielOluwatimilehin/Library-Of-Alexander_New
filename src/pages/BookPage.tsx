@@ -8,6 +8,7 @@ import { BookSkeleton } from '../components/BookSkeleton';
 import { ShareMenu } from '../components/ShareMenu';
 import { Comments } from '../components/Comments';
 import { getBookUrl , getImageUrl, extractTextFromRichText } from '../utils';
+import { getRatings, submitRating, getReviews, submitReview, getProgress, submitProgress } from '../lib/supabase';
 
 export default function BookPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -55,37 +56,17 @@ export default function BookPage() {
   
   useEffect(() => {
     if (book?.sys?.id) {
-      fetch(`/api/ratings/${book.sys.id}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.average !== undefined) {
-            setRatingData(data);
-          } else {
-            
-          }
-        })
-        .catch(err => console.error("Failed to fetch ratings:", err));
+      getRatings(book.sys.id).then(data => {
+        if (data && data.average !== undefined) setRatingData(data);
+      });
       
-      fetch(`/api/progress/${book.sys.id}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.want_to_read !== undefined) {
-            setProgressData(data);
-          }
-        })
-        .catch(err => console.error("Failed to fetch progress:", err));
+      getProgress(book.sys.id).then(data => {
+        if (data && data.want_to_read !== undefined) setProgressData(data);
+      });
         
-      fetch(`/api/reviews/${book.sys.id}`)
-        .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data)) {
-            setReviews(data);
-          } else {
-            
-            setReviews([]);
-          }
-        })
-        .catch(err => console.error("Failed to fetch reviews:", err));
+      getReviews(book.sys.id).then(data => {
+        if (Array.isArray(data)) setReviews(data);
+      });
     }
   }, [book?.sys?.id]);
   
@@ -94,68 +75,26 @@ export default function BookPage() {
     setUserProgress(status);
     setIsProgressMenuOpen(false);
     
-    try {
-      await fetch(`/api/progress/${book.sys.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
-      });
-      
-      const res = await fetch(`/api/progress/${book.sys.id}`);
-      const data = await res.json();
-      if (data && data.want_to_read !== undefined) {
-        setProgressData(data);
-      }
-    } catch (err) {
-      
-    }
+    await submitProgress(book.sys.id, status);
+    const updated = await getProgress(book.sys.id);
+    if (updated) setProgressData(updated);
   };
 
   const handleReviewSubmit = async () => {
     if (!book?.sys?.id || !reviewAuthor.trim() || !reviewContent.trim()) return;
-    try {
-      await fetch(`/api/reviews/${book.sys.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ author_name: reviewAuthor, content: reviewContent })
-      });
-      setReviewAuthor("");
-      setReviewContent("");
-      // Refresh reviews
-      const res = await fetch(`/api/reviews/${book.sys.id}`);
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setReviews(data);
-      } else {
-        setReviews([]);
-      }
-    } catch (err) {
-      
-    }
+    await submitReview(book.sys.id, reviewAuthor, reviewContent);
+    setReviewAuthor("");
+    setReviewContent("");
+    const updated = await getReviews(book.sys.id);
+    if (Array.isArray(updated)) setReviews(updated);
   };
 
   const handleRate = async (rating: number) => {
     if (!book?.sys?.id) return;
     setUserRating(rating);
-    try {
-      await fetch(`/api/ratings/${book.sys.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rating })
-      });
-      // Refresh ratings
-      fetch(`/api/ratings/${book.sys.id}`)
-        .then(res => res.json())
-        .then(data => setRatingData(data))
-        .catch(err => console.error("Failed to fetch ratings:", err));
-      const res = await fetch(`/api/ratings/${book.sys.id}`);
-      const data = await res.json();
-      if (data && data.average !== undefined) {
-        setRatingData(data);
-      }
-    } catch (err) {
-      
-    }
+    await submitRating(book.sys.id, rating);
+    const updated = await getRatings(book.sys.id);
+    if (updated) setRatingData(updated);
   };
 
 
@@ -440,11 +379,14 @@ export default function BookPage() {
             {fields.genre && (
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 text-[11px] mb-8 uppercase font-bold">
                 <span className="text-gray-700 tracking-wider mr-1">GENRES:</span>
-                {String(fields.genre).split(',').map((g, i) => (
-                  <span key={i} className="text-[#C8885B] border-b border-[#C8885B]/30 hover:border-[#C8885B] cursor-pointer">
-                    {g.trim()}
-                  </span>
-                ))}
+                {String(fields.genre).split(',').map((g, i) => {
+                  const cleanG = g.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                  return (
+                    <Link key={i} to={`/category/${cleanG}`} className="text-[#C8885B] border-b border-[#C8885B]/30 hover:border-[#C8885B] cursor-pointer">
+                      {g.trim()}
+                    </Link>
+                  );
+                })}
               </div>
             )}
 
