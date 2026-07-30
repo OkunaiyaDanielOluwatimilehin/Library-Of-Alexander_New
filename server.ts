@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import * as contentful from "contentful";
 import { createClient } from "@supabase/supabase-js";
@@ -310,6 +311,68 @@ app.get("/api/cms/entry/:id", async (req, res) => {
     console.error("Contentful error:", error);
     res.status(500).json({ error: "Failed to fetch entry", items: [] });
   }
+});
+
+// Dynamic Open Graph Meta Tag Injection for Social Sharing (WhatsApp, Twitter, Facebook)
+app.use(async (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|json|woff2?)$/)) {
+    return next();
+  }
+
+  if (req.path.startsWith('/blog/')) {
+    const slug = req.path.replace('/blog/', '').trim();
+    if (slug && client) {
+      try {
+        const entries = await client.getEntries({
+          content_type: 'blogPost',
+          'fields.slug': slug,
+          limit: 1,
+        });
+
+        if (entries.items && entries.items.length > 0) {
+          const item: any = entries.items[0];
+          const rawTitle = String(item.fields.title || 'Library of Alexander');
+          const title = rawTitle.replace(/"/g, '&quot;');
+          const rawSummary = String(item.fields.summary || item.fields.excerpt || 'Read this article on Library of Alexander.');
+          const summary = rawSummary.replace(/"/g, '&quot;');
+          
+          let imageUrl = '';
+          const rawImage = item.fields.coverImage || item.fields.imageUrl;
+          if (rawImage?.fields?.file?.url) {
+            const urlStr = String(rawImage.fields.file.url);
+            imageUrl = urlStr.startsWith('//') ? `https:${urlStr}` : urlStr;
+          }
+
+          const ogTags = `
+    <title>${title} | Library of Alexander</title>
+    <meta name="description" content="${summary}" />
+    <meta property="og:title" content="${title}" />
+    <meta property="og:description" content="${summary}" />
+    ${imageUrl ? `<meta property="og:image" content="${imageUrl}" />` : ''}
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="${req.protocol}://${req.get('host')}${req.originalUrl}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${title}" />
+    <meta name="twitter:description" content="${summary}" />
+    ${imageUrl ? `<meta name="twitter:image" content="${imageUrl}" />` : ''}
+          `;
+
+          const indexPath = process.env.NODE_ENV === 'production' 
+            ? path.join(process.cwd(), 'dist', 'index.html') 
+            : path.join(process.cwd(), 'index.html');
+
+          if (fs.existsSync(indexPath)) {
+            let html = fs.readFileSync(indexPath, 'utf-8');
+            html = html.replace(/<title>.*?<\/title>/, ogTags);
+            return res.send(html);
+          }
+        }
+      } catch (e) {
+        console.error("OG tag injection error:", e);
+      }
+    }
+  }
+  next();
 });
 
 // Vite middleware for development

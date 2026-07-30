@@ -111,17 +111,17 @@ function Navigation() {
         <Link to="/category/bottom-shelf" className={navItemClass('/category/bottom-shelf')}>
           <i className="fa-solid fa-box-archive text-gray-600"></i> Bottom Shelf
         </Link>
-        <Link to="/collection" className={navItemClass('/collection')}>
-          <i className="fa-solid fa-layer-group text-[#C8885B]"></i> Library Collection
+        <Link to="/originals" className="bg-[#111111] whitespace-nowrap text-white font-mono uppercase tracking-widest text-[10px] font-bold px-3.5 h-[30.5px] flex items-center justify-center rounded hover:bg-primary-orange hover:text-black transition-all hover:-translate-y-0.5 shadow-sm gap-1.5">
+          <i className="fa-solid fa-scroll text-amber-400"></i> Original Books
         </Link>
         <Link to="/blog" className={navItemClass('/blog')}>
           <i className="fa-solid fa-newspaper text-[#C8885B]"></i> Blog
         </Link>
+        <Link to="/collection" className={navItemClass('/collection')}>
+          <i className="fa-solid fa-layer-group text-[#C8885B]"></i> Library Collection
+        </Link>
         <Link to="/authors" className={navItemClass('/authors')}>
           <i className="fa-solid fa-feather-pointed text-[#845739]"></i> Authors
-        </Link>
-        <Link to="/originals" className="bg-[#111111] whitespace-nowrap text-white font-mono uppercase tracking-widest text-[10px] font-bold px-3.5 h-[30.5px] flex items-center justify-center rounded hover:bg-primary-orange hover:text-black transition-all hover:-translate-y-0.5 shadow-sm gap-1.5">
-          <i className="fa-solid fa-scroll text-amber-400"></i> Original Books
         </Link>
         
         <div className="relative ml-2">
@@ -170,17 +170,17 @@ function Navigation() {
             <Link to="/category/bottom-shelf" onClick={() => setIsOpen(false)} className={mobileNavItemClass('/category/bottom-shelf')}>
               <i className="fa-solid fa-box-archive text-gray-600 w-5 text-center"></i> Bottom Shelf
             </Link>
-            <Link to="/collection" onClick={() => setIsOpen(false)} className={mobileNavItemClass('/collection')}>
-              <i className="fa-solid fa-layer-group text-[#C8885B] w-5 text-center"></i> Library Collection
+            <Link to="/originals" onClick={() => setIsOpen(false)} className={mobileNavItemClass('/originals')}>
+              <i className="fa-solid fa-scroll text-amber-500 w-5 text-center"></i> Original Books
             </Link>
             <Link to="/blog" onClick={() => setIsOpen(false)} className={mobileNavItemClass('/blog')}>
               <i className="fa-solid fa-newspaper text-[#C8885B] w-5 text-center"></i> Blog
             </Link>
+            <Link to="/collection" onClick={() => setIsOpen(false)} className={mobileNavItemClass('/collection')}>
+              <i className="fa-solid fa-layer-group text-[#C8885B] w-5 text-center"></i> Library Collection
+            </Link>
             <Link to="/authors" onClick={() => setIsOpen(false)} className={mobileNavItemClass('/authors')}>
               <i className="fa-solid fa-feather-pointed text-[#845739] w-5 text-center"></i> Authors
-            </Link>
-            <Link to="/originals" onClick={() => setIsOpen(false)} className={mobileNavItemClass('/originals')}>
-              <i className="fa-solid fa-scroll text-amber-500 w-5 text-center"></i> Original Books
             </Link>
             
             <div className="p-4 md:hidden">

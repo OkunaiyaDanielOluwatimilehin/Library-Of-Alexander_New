@@ -43,18 +43,28 @@ export interface BlogPost {
   sys: { id: string };
   fields: {
     title: string;
+    slug?: string;
     summary?: string;
     excerpt?: string;
     content?: any;
     body?: any;
     category?: string | any;
+    categoryTag?: any;
+    category_tag?: any;
+    categories?: any;
+    tags?: any;
     author?: string;
     date?: string;
     readTime?: string;
     imageUrl?: ContentfulImage;
     coverImage?: ContentfulImage;
+    is_featured?: boolean;
     isFeatured?: boolean;
     featured?: boolean;
+    isTopArticle?: boolean;
+    is_top_article?: boolean;
+    topArticle?: boolean | any;
+    topArticles?: any;
   };
 }
 

@@ -1,8 +1,8 @@
 import { useEffect, useState, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { getBookUrl, getImageUrl } from "../utils";
+import { getBookUrl, getImageUrl, contentToMarkdown, getPostCategories } from "../utils";
 import { fetchEntries } from '../api';
-import { HomepageConfig, Book, Author } from '../types';
+import { HomepageConfig, Book, Author, BlogPost } from '../types';
 import { Link } from 'react-router-dom';
 import Markdown from 'react-markdown';
 import { HomeSkeleton } from '../components/HomeSkeleton';
@@ -24,7 +24,7 @@ function BannerCarousel({ items, bgColor, renderItem }: { items: any[], bgColor:
   const item = items[currentIndex];
 
   return (
-    <div className={`relative w-full ${bgColor} overflow-hidden group min-h-[360px] sm:min-h-[450px] md:min-h-[500px] flex items-center`}>
+    <div className={`relative w-full ${bgColor} overflow-hidden group min-h-[460px] sm:min-h-[560px] md:min-h-[640px] lg:min-h-[720px] flex items-center`}>
       <AnimatePresence mode="wait">
         <motion.div
           key={currentIndex}
@@ -62,6 +62,7 @@ export default function HomePage() {
   const [spotlightAuthors, setSpotlightAuthors] = useState<Author[]>([]);
   const [loading, setLoading] = useState(true);
   const [originalBooks, setOriginalBooks] = useState<any[]>([]);
+  const [featuredBlogPosts, setFeaturedBlogPosts] = useState<BlogPost[]>([]);
   const [showPopup, setShowPopup] = useState(false);
   const [showChapterBanner, setShowChapterBanner] = useState(true);
   const [popupBook, setPopupBook] = useState<Book | null>(null);
@@ -96,13 +97,14 @@ export default function HomePage() {
 
   useEffect(() => {
     async function loadData() {
-      const [configData, topPicksData, discoveryData, bottomShelfData, authorsData, originalBooksData] = await Promise.all([
+      const [configData, topPicksData, discoveryData, bottomShelfData, authorsData, originalBooksData, blogPostsData] = await Promise.all([
         fetchEntries<HomepageConfig>('homepageConfig', { limit: 1 }),
-        fetchEntries<Book>('book', { 'fields.isTopPick': true, limit: 5 }),
-        fetchEntries<Book>('book', { 'fields.isDiscovery': true, limit: 10 }),
-        fetchEntries<Book>('book', { 'fields.isBottomShelf': true, limit: 10 }),
-        fetchEntries<Author>('author', { 'fields.isSpotlight': true, limit: 1 }),
-        fetchEntries<any>('originalBook', { limit: 5 })
+        fetchEntries<Book>('book', { 'fields.isTopPick': true, limit: 50 }),
+        fetchEntries<Book>('book', { 'fields.isDiscovery': true, limit: 50 }),
+        fetchEntries<Book>('book', { 'fields.isBottomShelf': true, limit: 50 }),
+        fetchEntries<Author>('author', { 'fields.isSpotlight': true, limit: 5 }),
+        fetchEntries<any>('originalBook', { limit: 10 }),
+        fetchEntries<BlogPost>('blogPost', { limit: 20, include: 5 })
       ]);
       
       const sortByRank = (a: Book, b: Book) => {
@@ -117,6 +119,10 @@ export default function HomePage() {
       setBottomShelf(bottomShelfData.sort(sortByRank));
       setSpotlightAuthors(authorsData || []);
       setOriginalBooks(originalBooksData || []);
+      
+      const featured = blogPostsData.filter(p => p.fields.is_featured || p.fields.isFeatured || p.fields.featured);
+      setFeaturedBlogPosts(featured.length > 0 ? featured : (blogPostsData.length > 0 ? [blogPostsData[0]] : []));
+
       setLoading(false);
     }
     loadData();
@@ -273,7 +279,7 @@ export default function HomePage() {
             <div className="space-y-3 sm:space-y-4 font-[Open_Sans] text-sm sm:text-base leading-relaxed md:leading-[35.2px] text-white/90">
               {config?.fields.curatorBio ? (
                 <div className="prose prose-p:mb-[16px] md:prose-p:mb-[20px] prose-p:text-white/90 prose-p:font-[Open_Sans] prose-p:leading-relaxed md:prose-p:leading-[35.2px] text-white/90 text-sm sm:text-base">
-                  <Markdown>{String(config.fields.curatorBio)}</Markdown>
+                  <Markdown>{contentToMarkdown(config.fields.curatorBio)}</Markdown>
                 </div>
               ) : (
                 <>
@@ -292,6 +298,66 @@ export default function HomePage() {
 
       {/* Dynamic List Sections */}
       <div className="w-full max-w-[1920px] mx-auto space-y-8 sm:space-y-16 md:space-y-[96px]">
+        
+        {/* Featured Blog Post Banner Carousel */}
+        {featuredBlogPosts.length > 0 && (
+          <div id="featured-blog">
+            <BannerCarousel 
+              items={featuredBlogPosts} 
+              bgColor="bg-[#241711]"
+              renderItem={(post) => {
+                const coverUrl = getImageUrl(post.fields.coverImage || post.fields.imageUrl);
+                const slug = post.fields.slug || post.sys.id;
+                const categories = getPostCategories(post);
+                const summary = post.fields.summary || post.fields.excerpt;
+                const author = post.fields.author;
+                const articleTarget = `/blog/${slug}`;
+
+                return (
+                  <div className="w-full h-full relative group">
+                    {coverUrl && (
+                      <Link to={articleTarget} className="absolute right-0 top-0 bottom-0 w-full sm:w-3/4 md:w-2/3 opacity-40 sm:opacity-50 transition-transform duration-1000 group-hover:scale-105">
+                        <img src={coverUrl} alt={post.fields.title} className="w-full h-full object-cover object-center" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#241711] via-[#241711]/90 sm:via-[#241711]/60 to-transparent" />
+                      </Link>
+                    )}
+                    <div className="relative z-10 p-4 sm:p-8 md:p-12 lg:p-16 pb-10 sm:pb-12 max-w-3xl text-left flex flex-col items-start">
+                      <div className="flex flex-wrap items-center justify-start gap-2 sm:gap-3 mb-2 sm:mb-4">
+                        <h2>
+                          <span className="text-amber-400 font-display font-bold text-lg sm:text-2xl md:text-3xl uppercase tracking-widest flex items-center gap-1.5">
+                            FEATURED STORY
+                          </span>
+                        </h2>
+                        {categories.map((cat, cIdx) => (
+                          <span key={cIdx} className="text-[#C8885B] bg-black/50 px-2 py-0.5 border border-[#C8885B]/40 font-mono text-[10px] sm:text-xs uppercase tracking-widest font-bold">
+                            #{cat}
+                          </span>
+                        ))}
+                      </div>
+                      <Link to={articleTarget} className="block group/article text-left">
+                        <h3 className="text-xl sm:text-3xl md:text-4xl font-display font-bold text-white uppercase tracking-wider mb-2 group-hover/article:text-amber-400 transition-colors line-clamp-2">
+                          {post.fields.title}
+                        </h3>
+                        {author && (
+                          <p className="text-amber-300/90 font-display italic text-sm sm:text-base md:text-lg mt-1 sm:mt-2 uppercase tracking-wider mb-2 sm:mb-4 text-left">BY {author}</p>
+                        )}
+                        {summary && (
+                          <p className="text-gray-300 font-sans text-xs sm:text-sm md:text-base leading-relaxed mb-4 sm:mb-6 max-w-xl line-clamp-2 sm:line-clamp-3 text-left">
+                            {summary}
+                          </p>
+                        )}
+                      </Link>
+                      <Link to={articleTarget} className="inline-flex items-center gap-2 bg-[#C8885B] hover:bg-[#a66e47] text-white font-display font-bold text-[10px] sm:text-xs uppercase tracking-widest px-5 py-2.5 transition-colors shadow-md">
+                        <span>READ ARTICLE</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  </div>
+                );
+              }} 
+            />
+          </div>
+        )}
         
         {/* Top Picks List Banner */}
         <div id="top-picks">

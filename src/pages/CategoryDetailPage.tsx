@@ -149,6 +149,7 @@ function BookCard({ book, currentSlug }: { book: Book; currentSlug?: string; key
 
 export default function CategoryDetailPage() {
   const { slug } = useParams();
+  const isDiscovery = slug === 'discovery';
   const navigate = useNavigate();
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
@@ -206,8 +207,9 @@ export default function CategoryDetailPage() {
         
         // Fetch category entries to support subText/description from Contentful
         let catDesc = '';
+        let categoriesData: Category[] = [];
         try {
-          const categoriesData = await fetchEntries<Category>('category', { limit: 100 });
+          categoriesData = await fetchEntries<Category>('category', { limit: 100 });
           
           if (slug === 'top-picks') {
             const cat = categoriesData.find(c => c.fields.topPicks || c.fields.slug === 'top-picks' || c.fields.title?.toLowerCase() === 'top picks');
@@ -627,6 +629,7 @@ export default function CategoryDetailPage() {
             </button>
           </div>
         )}
+        {isDiscovery && <DiscoveryNotificationBanner />}
       </div>
     </div>
   );

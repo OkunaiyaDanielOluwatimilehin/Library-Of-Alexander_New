@@ -7,7 +7,7 @@ import Markdown from 'react-markdown';
 import { ShareMenu } from '../components/ShareMenu';
 import { Comments } from '../components/Comments';
 import useReactions from '../hooks/useReactions';
-import { getImageUrl } from '../utils';
+import { getImageUrl, contentToMarkdown } from '../utils';
 import { ChapterNotificationBanner } from '../components/ChapterNotificationBanner';
 
 const REACTIONS = [
@@ -283,9 +283,8 @@ export default function ReadOriginalBookPage() {
           <div className="border-t border-[#1A1A1A] w-full max-w-4xl mx-auto mb-8 sm:mb-16"></div>
 
           <div 
-            className="prose prose-neutral sm:prose-xl max-w-3xl lg:max-w-4xl mx-auto text-[#2D2D2D] font-[Open_Sans] text-base sm:text-lg md:text-xl leading-relaxed sm:leading-loose md:leading-[2] prose-p:mb-6 sm:prose-p:mb-8 prose-p:leading-relaxed sm:prose-p:leading-loose md:prose-p:leading-[2]
+            className="prose markdown-body max-w-3xl lg:max-w-4xl mx-auto text-[#2D2D2D] font-[Open_Sans] text-base sm:text-lg md:text-xl leading-relaxed sm:leading-loose md:leading-[2]
               prose-p:first-of-type:first-letter:float-left prose-p:first-of-type:first-letter:text-5xl sm:prose-p:first-of-type:first-letter:text-7xl md:prose-p:first-of-type:first-letter:text-8xl prose-p:first-of-type:first-letter:font-black prose-p:first-of-type:first-letter:pr-3 sm:prose-p:first-of-type:first-letter:pr-4 prose-p:first-of-type:first-letter:pt-0.5 sm:prose-p:first-of-type:first-letter:pt-1 prose-p:first-of-type:first-letter:font-display select-none
-              [&>p]:mb-6 sm:[&>p]:mb-8 [&>p]:text-[#222222] [&>blockquote]:border-l-2 [&>blockquote]:border-[#C8885B] [&>blockquote]:pl-4 [&>blockquote]:italic [&>blockquote]:my-6 [&>h2]:font-display [&>h2]:font-bold [&>h2]:text-xl sm:[&>h2]:text-2xl [&>h2]:mt-8 [&>h2]:mb-4
             "
             style={{
               WebkitUserSelect: 'none',
@@ -294,7 +293,7 @@ export default function ReadOriginalBookPage() {
               userSelect: 'none'
             }}
           >
-             <Markdown>{String(content)}</Markdown>
+             <Markdown>{contentToMarkdown(content)}</Markdown>
           </div>
           
           <div className="max-w-4xl mx-auto"><ReactionSection contentKey={contentKey} /></div>

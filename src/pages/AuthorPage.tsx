@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { fetchEntries } from '../api';
 import { Author, Book } from '../types';
-import { getImageUrl, getBookUrl } from '../utils';
+import { getImageUrl, getBookUrl, contentToMarkdown } from '../utils';
 import { Globe, Twitter, Instagram, Linkedin, Facebook, Lightbulb, BookOpen, ChevronLeft, ChevronRight, Sparkles, Share2 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { ShareMenu } from '../components/ShareMenu';
@@ -84,19 +84,24 @@ export default function AuthorPage() {
     const paginatedAuthors = sortedAuthors.slice((currentPage - 1) * authorsPerPage, currentPage * authorsPerPage);
 
     return (
-      <div className="min-h-screen bg-[#F5F1EB] pt-12 pb-24 flex flex-col items-center">
-        <div className="max-w-[1920px] w-full px-4 sm:px-6 md:px-12 lg:px-24">
+      <div className="min-h-screen bg-[#F5F1EB] pt-8 sm:pt-12 pb-24 flex flex-col items-center w-full">
+        <div className="w-full px-3 sm:px-6 md:px-12 xl:px-0 max-w-[1920px] mx-auto">
           
-          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl md:text-6xl uppercase font-black text-[#1A1A1A] mb-8 max-w-7xl mx-auto">
-            AUTHOR'S PAGE
-          </h1>
+          <div className="max-w-7xl mx-auto px-2 sm:px-4">
+            <h1 className="font-display text-3xl sm:text-4xl md:text-5xl md:text-6xl uppercase font-black text-[#1A1A1A] mb-2 sm:mb-3">
+              AUTHOR'S PAGE
+            </h1>
+            <p className="font-[Open_Sans] text-xs sm:text-base md:text-lg text-gray-600 mb-6 sm:mb-10 max-w-4xl font-medium leading-relaxed">
+              Explore our directory of renowned writers, essayists, and literary scholars. Discover comprehensive biographies, personal inspirations, and curated collections of notable works across every genre.
+            </p>
+          </div>
           
-          {/* Spotlight Section */}
+          {/* Spotlight Section - Full 1920px max width */}
           {spotlightAuthor && (
-            <div className="mb-12 sm:mb-16 bg-[#165691] text-white overflow-hidden relative shadow-md max-w-[1920px] mx-auto w-full rounded-none">
-              <div className="flex flex-col md:flex-row min-h-[300px] sm:min-h-[360px]">
+            <div className="mb-12 sm:mb-16 bg-[#165691] text-white overflow-hidden relative shadow-md max-w-[1920px] w-full mx-auto rounded-none">
+              <div className="flex flex-col md:flex-row min-h-[320px] sm:min-h-[380px] lg:min-h-[420px]">
                 {/* Mobile Author Image Block */}
-                <div className="w-full md:hidden h-52 relative overflow-hidden bg-[#0D3860]">
+                <div className="w-full md:hidden h-56 relative overflow-hidden bg-[#0D3860]">
                   {getImageUrl(spotlightAuthor.fields.image || spotlightAuthor.fields.imageUrl) ? (
                     <img 
                       src={getImageUrl(spotlightAuthor.fields.image || spotlightAuthor.fields.imageUrl)} 
@@ -111,27 +116,27 @@ export default function AuthorPage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-[#165691] via-transparent to-transparent" />
                 </div>
 
-                <div className="flex-1 p-5 sm:p-8 md:p-12 lg:p-16 flex flex-col justify-center relative z-10 bg-[#165691] md:bg-gradient-to-r md:from-[#165691] md:via-[#165691]/95 md:to-[#165691]/70 max-w-3xl">
+                <div className="flex-1 p-5 sm:p-8 md:p-12 lg:p-16 xl:p-20 flex flex-col justify-center relative z-10 bg-[#165691] md:bg-gradient-to-r md:from-[#165691] md:via-[#165691]/95 md:to-[#165691]/70 max-w-4xl">
                   <span className="text-[#3AC9B0] font-display font-bold text-xs sm:text-xl uppercase tracking-[0.2em] mb-1 sm:mb-2">
                     FEATURED SCHOLAR
                   </span>
-                  <h2 className="font-display text-2xl sm:text-4xl md:text-5xl lg:text-6xl uppercase tracking-tight font-black mb-3 sm:mb-6 text-white leading-tight">
+                  <h2 className="font-display text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl uppercase tracking-tight font-black mb-3 sm:mb-6 text-white leading-tight">
                     {spotlightAuthor.fields.name}
                   </h2>
                   {spotlightAuthor.fields.bio && (
                     <div className="mb-4 sm:mb-8 max-w-2xl">
-                      <p className="text-blue-100/90 font-[Open_Sans] text-xs sm:text-base line-clamp-3 sm:line-clamp-4 leading-relaxed sm:leading-relaxed mb-2">
+                      <p className="text-blue-100/90 font-[Open_Sans] text-xs sm:text-base md:text-lg line-clamp-3 sm:line-clamp-4 leading-relaxed sm:leading-relaxed mb-2">
                         {spotlightAuthor.fields.bio}
                       </p>
                     </div>
                   )}
                   <div>
-                    <Link to={`/authors/${spotlightAuthor.fields.slug || spotlightAuthor.sys.id}`} className="bg-[#FAED26] text-black font-display font-bold text-xs sm:text-sm uppercase tracking-widest py-2.5 sm:py-3 px-5 sm:px-8 transition-colors hover:bg-yellow-300 inline-flex items-center rounded-none">
+                    <Link to={`/authors/${spotlightAuthor.fields.slug || spotlightAuthor.sys.id}`} className="bg-[#FAED26] text-black font-display font-bold text-xs sm:text-sm uppercase tracking-widest py-2.5 sm:py-3.5 px-6 sm:px-8 transition-all hover:bg-yellow-300 inline-flex items-center rounded-none shadow-md hover:scale-[1.02]">
                       READ BIOGRAPHY <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 ml-1" />
                     </Link>
                   </div>
                 </div>
-                <div className="hidden md:block absolute top-0 right-0 w-full md:w-[60%] h-full">
+                <div className="hidden md:block absolute top-0 right-0 w-full md:w-[55%] lg:w-[60%] h-full">
                   {getImageUrl(spotlightAuthor.fields.image || spotlightAuthor.fields.imageUrl) && (
                     <img 
                       src={getImageUrl(spotlightAuthor.fields.image || spotlightAuthor.fields.imageUrl)} 
@@ -139,14 +144,14 @@ export default function AuthorPage() {
                       className="w-full h-full object-cover object-top md:object-center opacity-60" 
                     />
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-[#165691] to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-[#165691] via-[#165691]/50 to-transparent" />
                 </div>
               </div>
             </div>
           )}
 
           {/* Authors Grid Section */}
-          <div className="mb-4 sm:mb-6 max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+          <div className="mb-4 sm:mb-6 max-w-7xl mx-auto px-2 sm:px-4 flex flex-wrap items-center justify-between gap-4">
             <h3 className="font-display font-bold text-xs text-gray-500 uppercase tracking-widest">
               ALL ENROLLED WRITERS
             </h3>
@@ -167,7 +172,7 @@ export default function AuthorPage() {
             </div>
           </div>
 
-          <div className="max-w-7xl mx-auto w-full grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-8 sm:mb-12">
+          <div className="max-w-7xl mx-auto w-full px-2 sm:px-4 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-8 sm:mb-12">
             {paginatedAuthors.map((author) => {
               const coverUrl = getImageUrl(author.fields.image || author.fields.imageUrl);
               const slug = author.fields.slug || author.sys.id;
@@ -182,7 +187,7 @@ export default function AuthorPage() {
 
               return (
                 <React.Fragment key={author.sys.id}>
-                  {/* Mobile Library Book Collection Card Style (2x3 Matrix on mobile) */}
+                  {/* Mobile Library Book Collection Card Style */}
                   <Link 
                     to={`/authors/${slug}`}
                     className="group sm:hidden relative w-full aspect-[3/4] flex-shrink-0 overflow-hidden shadow-md block rounded-none bg-gray-200 border border-[#E8E3DC]"
@@ -207,32 +212,32 @@ export default function AuthorPage() {
                     </div>
                   </Link>
 
-                  {/* Desktop Layout */}
+                  {/* Desktop & Tablet Layout */}
                   <Link 
                     to={`/authors/${slug}`}
-                    className="hidden sm:flex bg-[#F7F4F0] border border-[#E8E3DC] rounded-none overflow-hidden transition-all hover:shadow-md group min-h-[170px]"
+                    className="hidden sm:flex bg-[#F7F4F0] border border-[#E8E3DC] rounded-none overflow-hidden transition-all hover:shadow-md group min-h-[140px] sm:min-h-[160px] md:min-h-[170px]"
                   >
-                    <div className="w-[130px] shrink-0 overflow-hidden bg-gray-200">
+                    <div className="w-[100px] sm:w-[110px] md:w-[130px] shrink-0 overflow-hidden bg-gray-200">
                       {coverUrl ? (
                         <img src={coverUrl} alt={author.fields.name} className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs text-center p-2">No Image</div>
                       )}
                     </div>
-                    <div className="flex-1 p-5 flex flex-col justify-between min-w-0">
+                    <div className="flex-1 p-3 sm:p-4 md:p-5 flex flex-col justify-between min-w-0">
                       <div>
-                        <h4 className="font-display font-black uppercase text-xl text-[#1A1A1A] truncate mb-1 group-hover:text-[#C8885B] transition-colors">
+                        <h4 className="font-display font-black uppercase text-sm sm:text-base md:text-xl text-[#1A1A1A] truncate mb-1 group-hover:text-[#C8885B] transition-colors">
                           {author.fields.name}
                         </h4>
                         {author.fields.bio && (
-                          <p className="font-[Open_Sans] text-sm text-[#4A4A4A] line-clamp-3 leading-relaxed">
+                          <p className="font-[Open_Sans] text-xs md:text-sm text-[#4A4A4A] line-clamp-2 sm:line-clamp-3 leading-relaxed">
                             {author.fields.bio}
                           </p>
                         )}
                       </div>
-                      <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-200/50">
-                        <span className="font-mono text-[10px] text-gray-400 uppercase tracking-wider">{worksCount} Works</span>
-                        <span className="font-mono text-[10px] text-[#E07A46] uppercase tracking-widest flex items-center font-bold">
+                      <div className="flex items-center justify-between mt-2 sm:mt-3 pt-2 border-t border-gray-200/50">
+                        <span className="font-mono text-[9px] sm:text-[10px] text-gray-400 uppercase tracking-wider">{worksCount} Works</span>
+                        <span className="font-mono text-[9px] sm:text-[10px] text-[#E07A46] uppercase tracking-widest flex items-center font-bold">
                           Bio <span className="ml-1">→</span>
                         </span>
                       </div>
@@ -400,7 +405,7 @@ export default function AuthorPage() {
 
             {author.fields.bio && (
               <div className="prose prose-neutral sm:prose-lg max-w-none text-[#2B2B2B] font-[Open_Sans] text-sm sm:text-base leading-relaxed sm:leading-loose mb-8 sm:mb-12 space-y-4 [&>p]:mb-4 [&>p]:leading-relaxed text-left">
-                <Markdown>{String(author.fields.bio)}</Markdown>
+                <Markdown>{contentToMarkdown(author.fields.bio)}</Markdown>
               </div>
             )}
 
@@ -568,25 +573,25 @@ export default function AuthorPage() {
                     </div>
                   </Link>
 
-                  {/* Desktop Preview Card */}
+                  {/* Desktop & Tablet Preview Card */}
                   <Link 
                     to={`/authors/${slug}`}
-                    className="hidden sm:flex bg-[#F7F4F0] border border-[#E8E3DC] rounded-none overflow-hidden transition-all hover:shadow-md group min-h-[160px]"
+                    className="hidden sm:flex bg-[#F7F4F0] border border-[#E8E3DC] rounded-none overflow-hidden transition-all hover:shadow-md group min-h-[140px] sm:min-h-[160px]"
                   >
-                    <div className="w-[120px] shrink-0 overflow-hidden bg-gray-200">
+                    <div className="w-[100px] sm:w-[110px] md:w-[120px] shrink-0 overflow-hidden bg-gray-200">
                       {relCoverUrl ? (
                         <img src={relCoverUrl} alt={relAuthor.fields.name} className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs text-center p-2">No Image</div>
                       )}
                     </div>
-                    <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
+                    <div className="flex-1 p-3 sm:p-4 flex flex-col justify-between min-w-0">
                       <div>
-                        <h4 className="font-display font-black uppercase text-base text-[#1A1A1A] truncate mb-1 group-hover:text-[#C8885B] transition-colors">
+                        <h4 className="font-display font-black uppercase text-sm sm:text-base text-[#1A1A1A] truncate mb-1 group-hover:text-[#C8885B] transition-colors">
                           {relAuthor.fields.name}
                         </h4>
                         {relAuthor.fields.bio && (
-                          <p className="font-[Open_Sans] text-xs text-[#4A4A4A] line-clamp-3 leading-relaxed">
+                          <p className="font-[Open_Sans] text-xs text-[#4A4A4A] line-clamp-2 sm:line-clamp-3 leading-relaxed">
                             {relAuthor.fields.bio}
                           </p>
                         )}
